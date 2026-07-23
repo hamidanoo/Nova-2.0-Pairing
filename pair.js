@@ -98,7 +98,7 @@ router.get('/', async (req, res) => {
 ┌┤✑  Thanks for using Nova 2.0 Bot
 │└────────────┈ ⳹        
 │©2026 Mr Hamid Shah
-└─────────────────┈ ⳹\n\n`
+└─────────────────┈ ⳹\n\n\nCopy above session id and paste in config.js`
                         });
                         console.log("⚠️ Warning message sent successfully");
 
