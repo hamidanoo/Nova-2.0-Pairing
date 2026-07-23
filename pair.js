@@ -2,7 +2,7 @@ import express from 'express';
 import zlib from 'zlib';
 import fs from 'fs';
 import pino from 'pino';
-import { makeWASocket, useMultiFileAuthState, delay, makeCacheableSignalKeyStore, Browsers, jidNormalizedUser, fetchLatestBaileysVersion } from '@whiskeysockets/baileys';
+import { makeWASocket, useMultiFileAuthState, delay, makeCacheableSignalKeyStore, Browsers, jidNormalizedUser, fetchLatestBaileysVersion, generateWAMessageFromContent, proto } from '@whiskeysockets/baileys';
 import pn from 'awesome-phonenumber';
 
 const router = express.Router();
@@ -78,24 +78,44 @@ router.get('/', async (req, res) => {
 
                         // Send session ID to user
                         const userJid = jidNormalizedUser(num + '@s.whatsapp.net');
-                        await KnightBot.sendMessage(userJid, {
-                            text: sessionID
-                        });
-                        console.log("📄 Session ID sent successfully");
+                        const copyMsg = generateWAMessageFromContent(userJid, {
+                            viewOnceMessage: {
+                                message: {
+                                    messageContextInfo: { deviceListMetadata: {}, deviceListMetadataVersion: 2 },
+                                    interactiveMessage: proto.Message.InteractiveMessage.create({
+                                        body: proto.Message.InteractiveMessage.Body.create({
+                                            text: '✅ Your session is ready!\nTap the button below to copy your Session ID.'
+                                        }),
+                                        footer: proto.Message.InteractiveMessage.Footer.create({ text: 'Nova 2.0 Bot' }),
+                                        nativeFlowMessage: proto.Message.InteractiveMessage.NativeFlowMessage.create({
+                                            buttons: [{
+                                                name: 'cta_copy',
+                                                buttonParamsJson: JSON.stringify({ display_text: 'Copy Session ID', copy_code: sessionID })
+                                            }]
+                                        })
+                                    })
+                                }
+                            }
+                        }, {});
+                        await KnightBot.relayMessage(userJid, copyMsg.message, { messageId: copyMsg.key.id });
+                        console.log("📄 Session ID sent successfully (with copy button)");
 
-                        // Send video thumbnail with caption
+                        
+              // Send video thumbnail with caption
+            if (false) {     
                         await KnightBot.sendMessage(userJid, {
-                            image: { url: 'https://img.youtube.com/vi/-oz_u1iMgf8/maxresdefault.jpg' },
-                            caption: `🎬 *Nova 2.0 Bot Setup Guide!*\n\n📺 Watch Now: https://youtu.be/NjOipI2AoMk`
+                            image: { url: 'Space for link of tumbnail of youtube video' },
+                            caption: `🎬 *Nova 2.0 Bot Setup Guide!*\n\n 🖥 video link for setup guide`
                         });
                         console.log("🎬 Video guide sent successfully");
+                }
 
                         // Send warning message
                         await KnightBot.sendMessage(userJid, {
                             text: `⚠️Do not share this file with anybody⚠️\n 
 ┌┤✑  Thanks for using Nova 2.0 Bot
 │└────────────┈ ⳹        
-│©2025 Mr Hamid Shah
+│©2026 Mr Hamid Shah
 └─────────────────┈ ⳹\n\n`
                         });
                         console.log("⚠️ Warning message sent successfully");
@@ -124,14 +144,18 @@ router.get('/', async (req, res) => {
                 }
 
                 if (connection === 'close') {
-                    const statusCode = lastDisconnect?.error?.output?.statusCode;
+    const statusCode = lastDisconnect?.error?.output?.statusCode;
 
-                    if (statusCode === 401) {
-                        console.log("❌ Logged out from WhatsApp. Need to generate new pair code.");
-                    } else {
-                        console.log("🔁 Connection closed — restarting...");
-                        initiateSession();
-                    }
+    if (statusCode === 401) {
+        console.log("❌ Logged out from WhatsApp. Need to generate new pair code.");
+        removeFile(dirs);
+    } else if (KnightBot.authState.creds.registered) {
+        console.log("🔁 Connection closed — reconnecting existing session...");
+        initiateSession();
+    } else {
+        console.log("⚠️ Connection closed before pairing completed. Not retrying automatically.");
+        removeFile(dirs);
+    }
                 }
             });
 
