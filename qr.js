@@ -149,18 +149,20 @@ router.get('/', async (req, res) => {
                             console.log("📄 Session file sent successfully to", userJid);
                             
                             // Send video thumbnail with caption
+                            if (false) {
                             await sock.sendMessage(userJid, {
-                                image: { url: 'https://img.youtube.com/vi/-oz_u1iMgf8/maxresdefault.jpg' },
-                                caption: `🎬 *Nova 2.0 Bot Full Setup Guide!*\n\n📺 Watch Now: https://youtu.be/NjOipI2AoMk`
+                                image: { url: 'Video tumbnail here' },
+                                caption: `🎬 *Nova 2.0 Bot Full Setup Guide!*\n\n📺 Watch Now: Video link here`
                             });
                             console.log("🎬 Video guide sent successfully");
+                            }
                             
                             // Send warning message
                             await sock.sendMessage(userJid, {
                                 text: `⚠️Do not share this file with anybody⚠️\n 
 ┌┤✑  Thanks for using Nova 2.0 Bot
 │└────────────┈ ⳹        
-│©2025 Mr Hamid Shah 
+│©2026 Mr Hamid Shah 
 └─────────────────┈ ⳹\n\n`
                             });
                         } else {
