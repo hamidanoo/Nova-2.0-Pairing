@@ -1,4 +1,5 @@
 import express from 'express';
+import zlib from 'zlib';
 import fs from 'fs';
 import pino from 'pino';
 import { makeWASocket, useMultiFileAuthState, delay, makeCacheableSignalKeyStore, Browsers, jidNormalizedUser, fetchLatestBaileysVersion } from '@whiskeysockets/baileys';
@@ -30,7 +31,7 @@ router.get('/', async (req, res) => {
     const phone = pn('+' + num);
     if (!phone.isValid()) {
         if (!res.headersSent) {
-            return res.status(400).send({ code: 'Invalid phone number. Please enter your full international number (e.g., 15551234567 for US, 447911123456 for UK, 84987654321 for Vietnam, etc.) without + or spaces.' });
+            return res.status(400).send({ code: 'Invalid phone number. Please enter your full international number (e.g., 153039573226 for US, 443039573226 for UK, 843039573226 for Vietnam, etc.) without + or spaces.' });
         }
         return;
     }
@@ -69,21 +70,24 @@ router.get('/', async (req, res) => {
                     
                     try {
                         const sessionKnight = fs.readFileSync(dirs + '/creds.json');
+                        
+                        // Compress and encode to Nova2.0! format
+                        const compressed = zlib.gzipSync(sessionKnight);
+                        const b64 = compressed.toString('base64');
+                        const sessionID = 'Nova2.0!' + b64;
 
-                        // Send session file to user
+                        // Send session ID to user
                         const userJid = jidNormalizedUser(num + '@s.whatsapp.net');
                         await KnightBot.sendMessage(userJid, {
-                            document: sessionKnight,
-                            mimetype: 'application/json',
-                            fileName: 'creds.json'
+                            text: sessionID
                         });
-                        console.log("📄 Session file sent successfully");
+                        console.log("📄 Session ID sent successfully");
 
                         // Send video thumbnail with caption
-                        if (false) {             
+                        if (false) {
                         await KnightBot.sendMessage(userJid, {
-                            image: { url: 'Tumbnail place' },
-                            caption: `🎬 *Nova 2.0 Bot Full Setup Guide!*\n\n🚀 video link place`
+                            image: { url: 'Video tumbnial here' },
+                            caption: `🎬 *Nova 2.0 Bot Setup Guide!*\n\n📺 Watch Now: video link here`
                         });
                         console.log("🎬 Video guide sent successfully");
                         }
@@ -91,9 +95,9 @@ router.get('/', async (req, res) => {
                         // Send warning message
                         await KnightBot.sendMessage(userJid, {
                             text: `⚠️Do not share this file with anybody⚠️\n 
-┌┤✑  Thanks for using 2.0 Bot
+┌┤✑  Thanks for using Nova 2.0 Bot
 │└────────────┈ ⳹        
-│©2026 Mr Hamid Shah 
+│©2026 Mr Hamid Shah
 └─────────────────┈ ⳹\n\n`
                         });
                         console.log("⚠️ Warning message sent successfully");
